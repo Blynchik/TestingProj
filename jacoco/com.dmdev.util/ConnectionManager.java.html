@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConnectionManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">junit5-trainer</a> &gt; <a href="index.source.html" class="el_package">com.dmdev.util</a> &gt; <span class="el_source">ConnectionManager.java</span></div><h1>ConnectionManager.java</h1><pre class="source lang-java linenums">package com.dmdev.util;
+
+import lombok.SneakyThrows;
+import lombok.experimental.UtilityClass;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+
+@UtilityClass
+<span class="nc" id="L10">public class ConnectionManager {</span>
+
+    private static final String URL_KEY = &quot;db.url&quot;;
+    private static final String USER_KEY = &quot;db.user&quot;;
+    private static final String PASSWORD_KEY = &quot;db.password&quot;;
+    private static final String DRIVER_KEY = &quot;db.driver&quot;;
+
+    static {
+<span class="fc" id="L18">        loadDriver();</span>
+<span class="fc" id="L19">    }</span>
+
+<span class="pc" id="L21">    @SneakyThrows</span>
+    private static void loadDriver() {
+<span class="fc" id="L23">        Class.forName(PropertiesUtil.get(DRIVER_KEY));</span>
+<span class="fc" id="L24">    }</span>
+
+<span class="nc" id="L26">    @SneakyThrows</span>
+    public static Connection get() {
+<span class="fc" id="L28">        return DriverManager.getConnection(</span>
+<span class="fc" id="L29">                PropertiesUtil.get(URL_KEY),</span>
+<span class="fc" id="L30">                PropertiesUtil.get(USER_KEY),</span>
+<span class="fc" id="L31">                PropertiesUtil.get(PASSWORD_KEY));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

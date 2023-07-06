@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserDao.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">junit5-trainer</a> &gt; <a href="index.source.html" class="el_package">com.dmdev.dao</a> &gt; <span class="el_source">UserDao.java</span></div><h1>UserDao.java</h1><pre class="source lang-java linenums">package com.dmdev.dao;
+
+import com.dmdev.entity.Gender;
+import com.dmdev.entity.Role;
+import com.dmdev.entity.User;
+import com.dmdev.util.ConnectionManager;
+import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
+
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static java.sql.Statement.RETURN_GENERATED_KEYS;
+import static lombok.AccessLevel.PRIVATE;
+
+@NoArgsConstructor(access = PRIVATE)
+public class UserDao implements Dao&lt;Integer, User&gt; {
+
+<span class="fc" id="L24">    private static final UserDao INSTANCE = new UserDao();</span>
+
+    private static final String GET_ALL_SQL = &quot;&quot;&quot;
+            SELECT
+                id,
+                name,
+                birthday,
+                email,
+                password,
+                role,
+                gender
+            FROM users
+            &quot;&quot;&quot;;
+    private static final String GET_BY_ID_SQL = GET_ALL_SQL + &quot; WHERE id = ?&quot;;
+    private static final String GET_BY_EMAIL_AND_PASSWORD_SQL = GET_ALL_SQL + &quot; WHERE email = ? AND password = ?&quot;;
+    private static final String SAVE_SQL =
+            &quot;INSERT INTO users (name, birthday, email, password, role, gender) VALUES (?, ?, ?, ?, ?, ?)&quot;;
+    private static final String DELETE_BY_ID_SQL = &quot;DELETE FROM users WHERE id = ?&quot;;
+    private static final String UPDATE_BY_ID_SQL = &quot;&quot;&quot;
+            UPDATE users
+            SET name = ?,
+                birthday = ?,
+                email = ?,
+                password = ?,
+                role = ?,
+                gender = ?
+            WHERE id = ?
+            &quot;&quot;&quot;;
+
+    public static UserDao getInstance() {
+<span class="fc" id="L54">        return INSTANCE;</span>
+    }
+
+    @Override
+<span class="nc" id="L58">    @SneakyThrows</span>
+    public List&lt;User&gt; findAll() {
+<span class="fc" id="L60">        try (var connection = ConnectionManager.get();</span>
+<span class="fc" id="L61">             var preparedStatement = connection.prepareStatement(GET_ALL_SQL)) {</span>
+<span class="fc" id="L62">            var resultSet = preparedStatement.executeQuery();</span>
+<span class="fc" id="L63">            List&lt;User&gt; users = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            while (resultSet.next()) {</span>
+<span class="fc" id="L65">                users.add(buildEntity(resultSet));</span>
+            }
+
+<span class="fc" id="L68">            return users;</span>
+        }
+    }
+
+    @Override
+<span class="nc" id="L73">    @SneakyThrows</span>
+    public Optional&lt;User&gt; findById(Integer id) {
+<span class="fc" id="L75">        try (var connection = ConnectionManager.get();</span>
+<span class="fc" id="L76">             var preparedStatement = connection.prepareStatement(GET_BY_ID_SQL)) {</span>
+<span class="fc" id="L77">            preparedStatement.setObject(1, id);</span>
+
+<span class="fc" id="L79">            var resultSet = preparedStatement.executeQuery();</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            return resultSet.next()</span>
+<span class="fc" id="L81">                    ? Optional.of(buildEntity(resultSet))</span>
+<span class="fc" id="L82">                    : Optional.empty();</span>
+        }
+    }
+
+    @Override
+<span class="fc" id="L87">    @SneakyThrows</span>
+    public User save(User entity) {
+<span class="fc" id="L89">        try (var connection = ConnectionManager.get();</span>
+<span class="fc" id="L90">             var preparedStatement = connection.prepareStatement(SAVE_SQL, RETURN_GENERATED_KEYS)) {</span>
+<span class="fc" id="L91">            prepareStatementToUpsert(preparedStatement, entity);</span>
+
+<span class="fc" id="L93">            preparedStatement.executeUpdate();</span>
+
+<span class="fc" id="L95">            var generatedKeys = preparedStatement.getGeneratedKeys();</span>
+<span class="fc" id="L96">            generatedKeys.next();</span>
+<span class="fc" id="L97">            entity.setId(generatedKeys.getObject(&quot;id&quot;, Integer.class));</span>
+
+<span class="fc" id="L99">            return entity;</span>
+        }
+    }
+
+<span class="nc" id="L103">    @SneakyThrows</span>
+    public Optional&lt;User&gt; findByEmailAndPassword(String email, String password) {
+<span class="fc" id="L105">        try (var connection = ConnectionManager.get();</span>
+<span class="fc" id="L106">             var preparedStatement = connection.prepareStatement(GET_BY_EMAIL_AND_PASSWORD_SQL)) {</span>
+<span class="fc" id="L107">            preparedStatement.setString(1, email);</span>
+<span class="fc" id="L108">            preparedStatement.setString(2, password);</span>
+
+<span class="fc" id="L110">            var resultSet = preparedStatement.executeQuery();</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            return resultSet.next()</span>
+<span class="fc" id="L112">                    ? Optional.of(buildEntity(resultSet))</span>
+<span class="fc" id="L113">                    : Optional.empty();</span>
+        }
+    }
+
+    @Override
+<span class="nc" id="L118">    @SneakyThrows</span>
+    public boolean delete(Integer id) {
+<span class="fc" id="L120">        try (var connection = ConnectionManager.get();</span>
+<span class="fc" id="L121">             var preparedStatement = connection.prepareStatement(DELETE_BY_ID_SQL)) {</span>
+<span class="fc" id="L122">            preparedStatement.setObject(1, id);</span>
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            return preparedStatement.executeUpdate() &gt; 0;</span>
+        }
+    }
+
+    @Override
+<span class="pc" id="L129">    @SneakyThrows</span>
+    public void update(User entity) {
+<span class="fc" id="L131">        try (var connection = ConnectionManager.get();</span>
+<span class="fc" id="L132">             var preparedStatement = connection.prepareStatement(UPDATE_BY_ID_SQL)) {</span>
+<span class="fc" id="L133">            prepareStatementToUpsert(preparedStatement, entity);</span>
+<span class="fc" id="L134">            preparedStatement.setObject(7, entity.getId());</span>
+
+<span class="fc" id="L136">            preparedStatement.executeUpdate();</span>
+        }
+<span class="fc" id="L138">    }</span>
+
+    private User buildEntity(ResultSet resultSet) throws SQLException {
+<span class="fc" id="L141">        return User.builder()</span>
+<span class="fc" id="L142">                .id(resultSet.getObject(&quot;id&quot;, Integer.class))</span>
+<span class="fc" id="L143">                .name(resultSet.getObject(&quot;name&quot;, String.class))</span>
+<span class="fc" id="L144">                .birthday(resultSet.getObject(&quot;birthday&quot;, Date.class).toLocalDate())</span>
+<span class="fc" id="L145">                .email(resultSet.getObject(&quot;email&quot;, String.class))</span>
+<span class="fc" id="L146">                .password(resultSet.getObject(&quot;password&quot;, String.class))</span>
+<span class="fc" id="L147">                .role(Role.find(resultSet.getObject(&quot;role&quot;, String.class)).orElse(null))</span>
+<span class="fc" id="L148">                .gender(Gender.find(resultSet.getObject(&quot;gender&quot;, String.class)).orElse(null))</span>
+<span class="fc" id="L149">                .build();</span>
+    }
+
+    private void prepareStatementToUpsert(PreparedStatement preparedStatement, User entity) throws SQLException {
+<span class="fc" id="L153">        preparedStatement.setObject(1, entity.getName());</span>
+<span class="fc" id="L154">        preparedStatement.setObject(2, entity.getBirthday());</span>
+<span class="fc" id="L155">        preparedStatement.setObject(3, entity.getEmail());</span>
+<span class="fc" id="L156">        preparedStatement.setObject(4, entity.getPassword());</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        preparedStatement.setObject(5, entity.getRole() != null ? entity.getRole().name() : null);</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        preparedStatement.setObject(6, entity.getGender() != null ? entity.getGender().name() : null);</span>
+<span class="fc" id="L159">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
